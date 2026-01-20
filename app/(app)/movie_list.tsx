@@ -23,7 +23,7 @@ export default function MovieList() {
             if (json.result === 'success') {
                 setMovies(json.data);
             }
-        } catch (error) { Alert.alert("Error", "Koneksi Error"); } 
+        } catch (error) { Alert.alert("Error", "Koneksi Error"); }
         finally { setLoading(false); }
     };
 
@@ -32,13 +32,17 @@ export default function MovieList() {
     if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#F1C40F" /></View>;
 
     const renderItem = ({ item }: { item: Movie }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
             onPress={() => router.push(`/movie_detail/${item.movie_id}` as Href)}
             style={styles.itemContainer}
         >
             <View style={styles.card}>
-                <Image source={{ uri: item.url }} style={styles.poster} resizeMode="cover" />
-                
+                <Image
+                    source={{ uri: item.url }}
+                    style={styles.poster}
+                    resizeMode="cover"
+                />
+
                 {/* Rating Badge (Floating) */}
                 <View style={styles.ratingBadge}>
                     <Icon name="star" type="font-awesome" color="#FFD700" size={10} />
@@ -71,8 +75,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#121212', // Background Hitam
     },
     center: {
-        flex: 1, 
-        justifyContent: 'center', 
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#121212'
     },
@@ -90,7 +94,7 @@ const styles = StyleSheet.create({
     },
     poster: {
         width: '100%',
-        height: 220,
+        aspectRatio: 3 / 2, 
     },
     ratingBadge: {
         position: 'absolute',

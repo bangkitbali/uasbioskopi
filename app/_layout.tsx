@@ -24,7 +24,7 @@ const InitialLayout = () => {
     }
   }, [isLoggedIn, segments, isReady]);
 
-  return <Slot />;
+  return <Slot/>;
 };
 
 // RootLayout adalah INDUK dari segalanya

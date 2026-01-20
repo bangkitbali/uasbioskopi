@@ -7,7 +7,7 @@ interface MovieDetail {
     movie_id: number;
     title: string;
     vote_average: number;
-    url: string; 
+    url: string;
     overview: string;
     release_date: string;
 }
@@ -24,9 +24,9 @@ interface Schedule {
 }
 
 export default function MovieDetail() {
-    const { id } = useLocalSearchParams(); 
-    const router = useRouter(); 
-    
+    const { id } = useLocalSearchParams();
+    const router = useRouter();
+
     const [movie, setMovie] = useState<MovieDetail | null>(null);
     const [schedules, setSchedules] = useState<Schedule[]>([]); // State untuk jadwal
     const [loading, setLoading] = useState(true);
@@ -40,11 +40,11 @@ export default function MovieDetail() {
 
             if (jsonMovie.result === 'success') {
                 setMovie(jsonMovie.data);
-                
+
                 // 2. Ambil Jadwal Tayang (Hanya kalau film ketemu)
                 const respSch = await fetch(`https://ubaya.cloud/react/160422148/uas/get_schedules.php?movie_id=${id}`);
                 const jsonSch = await respSch.json();
-                
+
                 if (jsonSch.result === 'success') {
                     setSchedules(jsonSch.data);
                 }
@@ -81,7 +81,7 @@ export default function MovieDetail() {
 
             <View style={styles.content}>
                 <Text style={styles.title}>{movie.title}</Text>
-                
+
                 <View style={styles.metaRow}>
                     <Icon name="star" type="font-awesome" color="#F1C40F" size={16} />
                     <Text style={styles.rating}>{movie.vote_average} / 10</Text>
@@ -94,20 +94,20 @@ export default function MovieDetail() {
 
                 {/* --- BAGIAN JADWAL TAYANG --- */}
                 <Text style={styles.sectionTitle}>Jadwal Tayang</Text>
-                
+
                 {schedules.length === 0 ? (
                     <Text style={styles.emptyText}>Belum ada jadwal tayang untuk film ini.</Text>
                 ) : (
                     schedules.map((item, index) => (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             key={index}
                             style={styles.scheduleCard}
                             onPress={() => {
                                 // Pindah ke halaman Pilih Kursi membawa data jadwal
                                 router.push({
                                     pathname: "/seat_selection",
-                                    params: { 
-                                        schedule_id: item.schedule_id, 
+                                    params: {
+                                        schedule_id: item.schedule_id,
                                         price: item.ticket_price,
                                         branch: item.branch_name,
                                         time: formatTime(item.start_time),
@@ -120,15 +120,15 @@ export default function MovieDetail() {
                                 <Text style={styles.branchName}>{item.branch_name}</Text>
                                 <Text style={styles.studioName}>{item.studio_name} • {item.city}</Text>
                             </View>
-                            <View style={{alignItems: 'flex-end'}}>
+                            <View style={{ alignItems: 'flex-end' }}>
                                 <Text style={styles.timeText}>{formatTime(item.start_time)}</Text>
                                 <Text style={styles.priceText}>{formatRupiah(item.ticket_price)}</Text>
                             </View>
                         </TouchableOpacity>
                     ))
                 )}
-                
-                <View style={{height: 50}} /> 
+
+                <View style={{ height: 50 }} />
             </View>
         </ScrollView>
     );
@@ -137,7 +137,10 @@ export default function MovieDetail() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#121212' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
-    poster: { width: '100%', height: 450 },
+    poster: {
+        width: '100%',
+        aspectRatio: 3 / 2,
+    },
     content: {
         padding: 20, marginTop: -30, backgroundColor: '#121212',
         borderTopLeftRadius: 25, borderTopRightRadius: 25, minHeight: 500,
@@ -147,7 +150,7 @@ const styles = StyleSheet.create({
     rating: { fontSize: 16, fontWeight: 'bold', marginLeft: 8, color: '#F1C40F' },
     sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#F1C40F', marginTop: 25 },
     overview: { fontSize: 15, lineHeight: 24, color: '#CCC', textAlign: 'justify' },
-    
+
     // Style Kartu Jadwal
     scheduleCard: {
         backgroundColor: '#1E1E1E',
