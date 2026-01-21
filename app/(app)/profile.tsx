@@ -9,10 +9,39 @@ export default function Profile() {
     const { logout } = useAuth();
     const router = useRouter();
     const [username, setUsername] = useState('');
+    const [saldo, setSaldo] = useState(0);
+
+    // useEffect(() => {
+    //     AsyncStorage.getItem('username').then(u => setUsername(u || 'User'));
+    // }, []);
 
     useEffect(() => {
-        AsyncStorage.getItem('username').then(u => setUsername(u || 'User'));
+        const loadProfile = async () => {
+            const userId = await AsyncStorage.getItem('user_id');
+            const uname = await AsyncStorage.getItem('username');
+
+            setUsername(uname || 'User');
+
+            if (!userId) {
+                console.log("USER ID KOSONG, FETCH DIBATALKAN");
+                return;
+            }
+
+            const res = await fetch(
+                `https://ubaya.cloud/react/160422148/uas/get_user.php?user_id=${userId}`
+            );
+
+            const json = await res.json();
+
+            if (json.result === "success") {
+                setSaldo(Number(json.data.saldo));
+            }
+        };
+
+        loadProfile();
     }, []);
+
+
 
     return (
         <View style={styles.container}>
@@ -22,6 +51,9 @@ export default function Profile() {
                 </View>
                 <Text style={styles.name}>{username}</Text>
                 <Text style={styles.membership}>M.Tix Member</Text>
+                <Text style={styles.saldo}>
+                    Saldo: Rp {saldo.toLocaleString('id-ID')}
+                </Text>
             </View>
 
             <View style={styles.menuContainer}>
@@ -30,7 +62,7 @@ export default function Profile() {
                     <Text style={styles.menuText}>Riwayat Transaksi</Text>
                     <Icon name="chevron-right" color="#666" />
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/topup')}>
                     <Icon name="account-balance-wallet" color="#2ECC71" />
                     <Text style={styles.menuText}>Top Up Saldo</Text>
@@ -38,8 +70,8 @@ export default function Profile() {
                 </TouchableOpacity>
             </View>
 
-            <Button 
-                title="LOGOUT" 
+            <Button
+                title="LOGOUT"
                 buttonStyle={styles.logoutBtn}
                 titleStyle={{ fontWeight: 'bold' }}
                 onPress={logout}
@@ -57,5 +89,12 @@ const styles = StyleSheet.create({
     menuContainer: { backgroundColor: '#1E1E1E', borderRadius: 15, padding: 10 },
     menuItem: { flexDirection: 'row', alignItems: 'center', padding: 15, borderBottomWidth: 1, borderBottomColor: '#333', justifyContent: 'space-between' },
     menuText: { color: 'white', fontSize: 16, flex: 1, marginLeft: 15 },
-    logoutBtn: { backgroundColor: '#E74C3C', borderRadius: 10, paddingVertical: 15, marginTop: 30 }
+    logoutBtn: { backgroundColor: '#E74C3C', borderRadius: 10, paddingVertical: 15, marginTop: 30 },
+    saldo: {
+        color: '#2ECC71',
+        fontSize: 18,
+        marginTop: 10,
+        fontWeight: 'bold'
+    },
+
 });

@@ -2,7 +2,7 @@ import { Button, Icon } from "@rneui/base";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 // 1. TAMBAHKAN TouchableOpacity DI SINI
-import { Text, TextInput, View, StyleSheet, Alert, StatusBar, TouchableOpacity } from "react-native"; 
+import { Text, TextInput, View, StyleSheet, Alert, StatusBar, TouchableOpacity } from "react-native";
 import { useAuth } from "../../authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -14,19 +14,28 @@ export default function Login() {
     const [password, setPassword] = useState('');
 
     const handleLogin = async () => {
-       // ... (kode login biarkan saja)
         const options = {
             method: 'POST',
             headers: new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' }),
             body: "user_name=" + username + "&user_password=" + password
         };
+
         try {
-            const response = await fetch('https://ubaya.cloud/react/160422148/uas/login.php', options);
+            const response = await fetch(
+                'https://ubaya.cloud/react/160422148/uas/login.php',
+                options
+            );
             const json = await response.json();
+
+
             if (json.result === 'success') {
-                await AsyncStorage.setItem('username', username);
-                login(username);
+
+                await AsyncStorage.setItem('user_id', json.data.user_id.toString());
+                await AsyncStorage.setItem('username', json.data.user_name);
+
+                login(json.data.user_name);
                 router.replace("/(app)");
+
             } else {
                 Alert.alert("Gagal", json.message || 'Username atau password salah');
             }
@@ -35,10 +44,11 @@ export default function Login() {
         }
     };
 
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#121212" />
-            
+
             <View style={styles.headerContainer}>
                 <Icon name="movie" type="material" color="#F1C40F" size={60} />
                 <Text style={styles.appName}>BIOSKOP</Text>
@@ -90,7 +100,7 @@ const styles = StyleSheet.create({
     // ... (style lama biarkan sama)
     container: {
         flex: 1,
-        backgroundColor: '#121212', 
+        backgroundColor: '#121212',
         justifyContent: 'center',
         padding: 20,
     },
@@ -101,7 +111,7 @@ const styles = StyleSheet.create({
     appName: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#F1C40F', 
+        color: '#F1C40F',
         marginTop: 10,
         letterSpacing: 2,
     },
@@ -111,7 +121,7 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     formContainer: {
-        backgroundColor: '#1E1E1E', 
+        backgroundColor: '#1E1E1E',
         padding: 20,
         borderRadius: 15,
         elevation: 5,
@@ -131,13 +141,13 @@ const styles = StyleSheet.create({
         borderColor: '#333',
     },
     loginButton: {
-        backgroundColor: '#F1C40F', 
+        backgroundColor: '#F1C40F',
         borderRadius: 8,
         paddingVertical: 12,
         marginTop: 10,
     },
     loginButtonText: {
-        color: '#121212', 
+        color: '#121212',
         fontWeight: 'bold',
         fontSize: 16,
     },

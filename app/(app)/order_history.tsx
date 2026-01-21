@@ -1,25 +1,50 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from "react-native";
-import { Icon, Button } from "@rneui/base";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Icon } from "@rneui/base";
 import { useRouter } from "expo-router";
-
-// Tipe data sesuai output JSON dari PHP
-interface Order {
-    order_id: number;
-    order_date: string;
-    total_amount: number;
-    status: string;
-    movie_title: string;
-    branch_name: string;
-    start_time: string;
-}
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function OrderHistory() {
+
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'ticket' | 'fnb'>('ticket'); // Default tab 'ticket'
+    const [activeTab, setActiveTab] = useState<'ticket' | 'fnb' | 'saldo'>('ticket');
     const router = useRouter();
+
+    interface Order {
+        order_id: number;
+        order_date: string;
+        total_amount: number;
+        status: string;
+        movie_title: string;
+        branch_name: string;
+        start_time: string;
+    }
+    interface SaldoHistory {
+        id: number;
+        tanggal: string;
+        jenis: 'TOPUP' | 'DEBIT';
+        jumlah: number;
+        keterangan: string;
+    }
+    type HistoryItem = Order | SaldoHistory;
+    const [saldoHistory, setSaldoHistory] = useState<SaldoHistory[]>([]);
+
+
+    const fetchSaldoHistory = async () => {
+        const userId = await AsyncStorage.getItem('user_id');
+        if (!userId) return;
+
+        const res = await fetch(
+            `https://ubaya.cloud/react/160422148/uas/get_saldo_history.php?user_id=${userId}`
+        );
+
+        const json = await res.json();
+        if (json.result === 'success') {
+            setSaldoHistory(json.data);
+        }
+    };
+
 
     const fetchHistory = async () => {
         try {
@@ -48,7 +73,9 @@ export default function OrderHistory() {
 
     useEffect(() => {
         fetchHistory();
+        fetchSaldoHistory();
     }, []);
+
 
     // Filter Data Berdasarkan Tab
     // Logika: Kalau judulnya "Pesanan F&B (Café)" berarti masuk tab FnB, selain itu masuk Tiket.
@@ -59,6 +86,22 @@ export default function OrderHistory() {
             return item.movie_title === "Pesanan F&B (Café)";
         }
     });
+
+    const displayedData = (): HistoryItem[] => {
+        if (activeTab === 'saldo') {
+            return saldoHistory;
+        }
+
+        if (activeTab === 'ticket') {
+            return orders.filter(o => o.movie_title !== "Pesanan F&B (Café)");
+        }
+
+        if (activeTab === 'fnb') {
+            return orders.filter(o => o.movie_title === "Pesanan F&B (Café)");
+        }
+
+        return [];
+    };
 
     const formatRupiah = (num: number) => {
         return "Rp " + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -126,6 +169,47 @@ export default function OrderHistory() {
         </TouchableOpacity>
     );
 
+    const renderSaldoItem = ({ item }: { item: SaldoHistory }) => {
+        const isTopup = item.jenis === 'TOPUP';
+
+        return (
+            <View style={styles.card}>
+                <View style={styles.headerRow}>
+                    <View style={{ flex: 1 }}>
+                        {/* JUDUL */}
+                        <Text style={styles.movieTitle}>
+                            {isTopup ? 'Top Up Saldo' : 'Pembelian'}
+                        </Text>
+
+                        {/* DETAIL KECIL */}
+                        <Text style={styles.orderId}>
+                            {isTopup
+                                ? `Metode: ${item.keterangan}`
+                                : item.keterangan}
+                        </Text>
+
+                        <Text style={[styles.orderId, { marginTop: 2 }]}>
+                            {item.tanggal}
+                        </Text>
+                    </View>
+
+                    {/* NOMINAL */}
+                    <Text
+                        style={{
+                            color: isTopup ? '#2ECC71' : '#E74C3C',
+                            fontWeight: 'bold',
+                            fontSize: 16
+                        }}
+                    >
+                        {isTopup ? '+' : '-'} Rp {item.jumlah.toLocaleString('id-ID')}
+                    </Text>
+                </View>
+            </View>
+        );
+    };
+
+
+
     if (loading) {
         return (
             <View style={styles.center}>
@@ -140,6 +224,20 @@ export default function OrderHistory() {
 
             {/* --- TAB MENU --- */}
             <View style={styles.tabContainer}>
+                <TouchableOpacity
+                    style={[styles.tabButton, activeTab === 'saldo' && styles.activeTab]}
+                    onPress={() => setActiveTab('saldo')}
+                >
+                    <Icon
+                        name="account-balance-wallet"
+                        color={activeTab === 'saldo' ? '#F1C40F' : '#888'}
+                        size={20}
+                    />
+                    <Text style={[styles.tabText, activeTab === 'saldo' && styles.activeTabText]}>
+                        SALDO
+                    </Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                     style={[styles.tabButton, activeTab === 'ticket' && styles.activeTab]}
                     onPress={() => setActiveTab('ticket')}
@@ -158,20 +256,19 @@ export default function OrderHistory() {
             </View>
 
             {/* List Data */}
-            <FlatList
-                data={filteredOrders}
-                keyExtractor={(item) => item.order_id.toString()}
-                renderItem={renderItem}
-                contentContainerStyle={{ padding: 15 }}
-                ListEmptyComponent={
-                    <View style={styles.centerEmpty}>
-                        <Icon name="receipt-long" size={60} color="#333" />
-                        <Text style={styles.emptyText}>
-                            Belum ada riwayat {activeTab === 'ticket' ? 'nonton' : 'jajan'}.
-                        </Text>
-                    </View>
+            <FlatList<HistoryItem>
+                data={displayedData()}
+                keyExtractor={(item: any, index) =>
+                    item.order_id ? `order-${item.order_id}` : `saldo-${item.id}-${index}`
                 }
+                renderItem={({ item }) =>
+                    activeTab === 'saldo'
+                        ? renderSaldoItem({ item: item as SaldoHistory })
+                        : renderItem({ item: item as Order })
+                }
+                contentContainerStyle={{ padding: 15 }}
             />
+
         </View>
     );
 }
